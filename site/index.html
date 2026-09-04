@@ -1,14 +1,37 @@
 <!doctype html>
-<html lang="ru" data-theme="light">
+<html lang="ru" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#7c5cff">
+<meta name="theme-color" content="#0f1220" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eef1f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1220">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>БНТУ · Расписание</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="БНТУ">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+  // Без мерцания темы и согласия при перезагрузке
+  try{
+    var t=localStorage.getItem("ftug_theme");
+    if(!t) t=window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
+    document.documentElement.setAttribute("data-theme",t);
+  }catch(e){}
+  document.addEventListener("DOMContentLoaded",function(){
+    try{
+      if(localStorage.getItem("ftug_consent")==="1"){
+        var c=document.getElementById("consentBg");
+        if(c) c.classList.add("hidden");
+      }
+    }catch(e){}
+  });
+</script>
 <style>
 /* ───────── reset ───────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -1007,6 +1030,11 @@ function toast(msg){
       msg.innerHTML="<div><div style='font-size:48px;margin-bottom:16px'>🚫</div>Без согласия с условиями использования сайт недоступен.<br><br><span style='font-size:13px;color:var(--fg-mute)'>Чтобы продолжить, перезагрузите страницу и примите условия.</span></div>";
       document.body.appendChild(msg);
     };
+  }
+
+  // Service worker для PWA
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
   }
 
   // PWA install — кнопка видна если браузер предложил установку
