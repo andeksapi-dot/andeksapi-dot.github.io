@@ -937,7 +937,7 @@ function renderSlot(l,num,pt,subsInSlot){
     ?`<span class="badge type-${esc(type)}">${esc(type)}</span>`
     :`<span class="badge type--">Занятие</span>`;
   const weekBadge=l.week?`<span class="badge week">нед ${l.week}</span>`:"";
-  const sub=l.subgroup?`<span class="badge sub sub-${l.subgroup}">${l.subgroup}/2</span>`:"";
+  const sub=l.subgroup?`<span class="badge sub sub-${l.subgroup}">подгр. ${l.subgroup}</span>`:"";
   // Пишем "X-я свободна" только если в этом слоте ДРУГОЙ подгруппы нет (subsInSlot)
   let freeNote="";
   if(l.subgroup&&subsInSlot){
@@ -957,7 +957,7 @@ function renderSlot(l,num,pt,subsInSlot){
       <div class="slot-time">${esc(pt.label)}</div>
       <div class="slot-num">пара ${num}</div>
     </div>
-    ${sub?`<div class="sub-strip sub-${l.subgroup}">${l.subgroup}-я подгруппа<span class="sub">${l.subgroup}/2</span>${freeNote}</div>`:""}
+    ${sub?`<div class="sub-strip sub-${l.subgroup}">${l.subgroup}-я подгруппа${freeNote}</div>`:""}
     <div class="badges">${typeBadge}${weekBadge}${shared}</div>
     <div class="subject${l.subject?"":" empty"}">${esc(l.subject||"Без названия")}</div>
     <div class="slot-foot">
