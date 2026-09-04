@@ -1,0 +1,68 @@
+name: Обновление расписания
+
+on:
+  schedule:
+    # каждые 8 часов — в диапазоне 6-12 часов, как просил владелец
+    - cron: '17 */8 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/**', 'site/**', '.github/workflows/**']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: pip install xlrd==2.0.2
+
+      - name: Скачать свежее расписание (кнопки «1 курс» и «2 курс»)
+        run: |
+          curl -fsSL -o schedule_1.xls "https://files.bntu.by/s/clKyMFGYUOZhpWT/download"
+          curl -fsSL -o schedule_2.xls "https://files.bntu.by/s/5vlRAbygaHic7k0/download"
+          md5sum schedule_1.xls schedule_2.xls
+
+      - name: Распарсить оба файла в site/data.json
+        run: python3 scripts/parse_bntu.py site/data.json schedule_1.xls schedule_2.xls
+
+      - name: Проверить data.json
+        run: |
+          python3 -c "
+          import json
+          d=json.load(open('site/data.json'))
+          assert 'ФТУГ 1 КУРС' in d and 'ФТУГ 2 КУРС' in d, 'листы ФТУГ не найдены'
+          print('OK: листов=', len(d), 'ФТУГ 1 КУРС групп=', len(d['ФТУГ 1 КУРС']), 'ФТУГ 2 КУРС групп=', len(d['ФТУГ 2 КУРС']))
+          "
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
