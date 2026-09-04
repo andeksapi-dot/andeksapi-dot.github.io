@@ -128,6 +128,21 @@ a{color:inherit;text-decoration:none}
 }
 .iconbtn:active{transform:scale(.92)}
 .iconbtn.theme{animation:rotate360 .55s ease}
+.iconbtn.install{
+  background:linear-gradient(135deg,rgba(124,92,255,.25),rgba(34,211,238,.25));
+  border-color:rgba(124,92,255,.5);
+  color:#7c5cff;
+  font-weight:800;font-size:22px;
+  position:relative;
+  animation:installPulse 2.4s ease-in-out infinite;
+}
+.iconbtn.install::before{
+  content:"";position:absolute;inset:-3px;border-radius:14px;
+  background:linear-gradient(135deg,#7c5cff,#22d3ee);
+  z-index:-1;opacity:.35;filter:blur(6px);
+  animation:rotate360 4s linear infinite;
+}
+@keyframes installPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,255,.4)}50%{box-shadow:0 0 0 6px rgba(124,92,255,0)}}
 @keyframes rotate360{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* ───────── screens ───────── */
@@ -544,6 +559,7 @@ a{color:inherit;text-decoration:none}
     <div class="subtitle">Расписание занятий</div>
   </div>
   <div class="chip" id="chip"></div>
+  <button class="iconbtn install" id="btnInstall" title="Добавить на главный экран" style="display:none">+</button>
   <button class="iconbtn theme" id="btnTheme" title="Тема">🌙</button>
   <button class="iconbtn" id="btnReport" title="Жалоба" style="display:none">⚑</button>
   <button class="iconbtn" id="btnExit" title="Выйти" style="display:none">✕</button>
@@ -992,6 +1008,31 @@ function toast(msg){
       document.body.appendChild(msg);
     };
   }
+
+  // PWA install — кнопка видна если браузер предложил установку
+  let deferredPrompt=null;
+  const installBtn=$("#btnInstall");
+  window.addEventListener("beforeinstallprompt",(e)=>{
+    e.preventDefault();
+    deferredPrompt=e;
+    installBtn.style.display="grid";
+  });
+  installBtn.addEventListener("click",async()=>{
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const choice=await deferredPrompt.userChoice;
+      deferredPrompt=null;
+      installBtn.style.display="none";
+      toast(choice.outcome==="accepted"?"Установлено!":"Установка отменена");
+    }else{
+      // Фоллбэк — инструкция для iOS/Safari где beforeinstallprompt не срабатывает
+      toast("Открой в меню браузера: «Добавить на главный экран»");
+    }
+  });
+  window.addEventListener("appinstalled",()=>{
+    installBtn.style.display="none";
+    toast("Приложение установлено 🎉");
+  });
 
   // Пауза анимации блобов на время скролла — убирает jank фона при прокрутке
   const blobs=document.querySelectorAll(".blob");
