@@ -900,6 +900,13 @@ function renderDay(){
   const pairIndex={};
   uniquePairs.forEach((t,i)=>{pairIndex[t]=i+1;});
 
+  // Для каждого слота собираем какие подгруппы заняты — чтобы НЕ писать "X-я свободна" если обе на паре
+  const subsInSlot={};
+  lessons.forEach(l=>{
+    if(!subsInSlot[l.time]) subsInSlot[l.time]=new Set();
+    if(l.subgroup) subsInSlot[l.time].add(l.subgroup);
+  });
+
   // между разными временами вставим перерыв
   let html="";
   let prevEnd=0;
@@ -910,7 +917,7 @@ function renderDay(){
     if(prevTime!==null&&l.time!==prevTime&&gap>=5&&gap<=90){
       html+=`<div class="break">☕ перерыв ${gap} мин</div>`;
     }
-    html+=renderSlot(l,pairIndex[l.time],pt);
+    html+=renderSlot(l,pairIndex[l.time],pt,subsInSlot[l.time]);
     if(l.time!==prevTime) prevEnd=pt.end;
     prevTime=l.time;
   });
@@ -924,13 +931,19 @@ function plural(n,a,b,c){
   if(m10>=2&&m10<=4&&(m100<12||m100>14)) return b;
   return c;
 }
-function renderSlot(l,num,pt){
+function renderSlot(l,num,pt,subsInSlot){
   const type=normType(l.type);
   const typeBadge=type
     ?`<span class="badge type-${esc(type)}">${esc(type)}</span>`
     :`<span class="badge type--">Занятие</span>`;
   const weekBadge=l.week?`<span class="badge week">нед ${l.week}</span>`:"";
   const sub=l.subgroup?`<span class="badge sub sub-${l.subgroup}">${l.subgroup}/2</span>`:"";
+  // Пишем "X-я свободна" только если в этом слоте ДРУГОЙ подгруппы нет (subsInSlot)
+  let freeNote="";
+  if(l.subgroup&&subsInSlot){
+    const other=l.subgroup===1?2:1;
+    if(!subsInSlot.has(other)) freeNote=`<span class="sub-free">${other}-я свободна</span>`;
+  }
   const shared=l.shared_with&&l.shared_with.length
     ?`<span class="badge shared">совм: ${l.shared_with.map(esc).join(", ")}</span>`
     :"";
@@ -944,7 +957,7 @@ function renderSlot(l,num,pt){
       <div class="slot-time">${esc(pt.label)}</div>
       <div class="slot-num">пара ${num}</div>
     </div>
-    ${sub?`<div class="sub-strip sub-${l.subgroup}">${l.subgroup}-я подгруппа<span class="sub">${l.subgroup}/2</span><span class="sub-free">${l.subgroup===1?2:1}-я свободна</span></div>`:""}
+    ${sub?`<div class="sub-strip sub-${l.subgroup}">${l.subgroup}-я подгруппа<span class="sub">${l.subgroup}/2</span>${freeNote}</div>`:""}
     <div class="badges">${typeBadge}${weekBadge}${shared}</div>
     <div class="subject${l.subject?"":" empty"}">${esc(l.subject||"Без названия")}</div>
     <div class="slot-foot">
