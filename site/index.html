@@ -458,9 +458,78 @@ a{color:inherit;text-decoration:none}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
 }
+/* ───────── consent modal ───────── */
+.consent-bg{position:fixed;inset:0;z-index:100;background:rgba(8,10,20,.55);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  display:flex;align-items:center;justify-content:center;padding:18px;
+  animation:fadeIn .35s ease both}
+.consent-bg.hidden{display:none}
+.consent-card{
+  width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+  background:var(--card-solid);border:1px solid var(--card-border);
+  border-radius:22px;padding:24px 22px;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+  animation:pop .4s cubic-bezier(.2,.9,.3,1.2) both;
+}
+.consent-icon{font-size:36px;text-align:center;margin-bottom:6px}
+.consent-card h2{font-size:20px;font-weight:800;text-align:center;margin-bottom:14px;
+  background:linear-gradient(135deg,#7c5cff,#22d3ee,#f472b6);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.consent-text{font-size:13.5px;line-height:1.55;color:var(--fg-soft);margin-bottom:18px}
+.consent-text p{margin-bottom:10px}
+.consent-text ul{margin:8px 0 10px 0;padding-left:20px}
+.consent-text li{margin-bottom:6px}
+.consent-text b{color:var(--fg);font-weight:700}
+.consent-text a{color:var(--accent);text-decoration:none;font-weight:600;border-bottom:1px dashed currentColor}
+.consent-text a:hover{opacity:.8}
+.consent-mini{font-size:12px;opacity:.7;font-style:italic;margin-top:10px!important}
+.consent-buttons{display:flex;gap:10px;flex-direction:column}
+.consent-buttons button{
+  width:100%;padding:13px 16px;border-radius:14px;border:0;
+  font-weight:800;font-size:15px;cursor:pointer;transition:transform .15s,filter .2s;
+  font-family:inherit;
+}
+.consent-buttons button:active{transform:scale(.97)}
+.consent-accept{
+  background:linear-gradient(135deg,#7c5cff,#22d3ee);color:#fff;
+  box-shadow:0 8px 22px -6px rgba(124,92,255,.5);
+}
+.consent-accept:hover{filter:brightness(1.08)}
+.consent-decline{
+  background:transparent;border:1px solid var(--card-border);color:var(--fg-mute);
+  font-weight:600;
+}
+.consent-decline:hover{background:rgba(255,255,255,.04);color:var(--fg-soft)}
+@media(min-width:480px){
+  .consent-buttons{flex-direction:row}
+}
 </style>
 </head>
 <body>
+
+<!-- ───────── consent / disclaimer (показывается один раз) ───────── -->
+<div class="consent-bg" id="consentBg">
+  <div class="consent-card">
+    <div class="consent-icon">⚖️</div>
+    <h2>Прежде чем начать</h2>
+    <div class="consent-text">
+      <p><b>Это неофициальный сайт расписания БНТУ.</b> Он не аффилирован с Белорусским национальным техническим университетом и не является его официальным ресурсом.</p>
+      <p>Источник данных — открытые страницы <a href="https://bntu.by/raspisanie/ftug" target="_blank" rel="noopener">bntu.by/raspisanie/ftug</a>. Расписание может быть неактуальным, содержать ошибки или отличаться от реального.</p>
+      <p>Продолжая использовать сайт, вы понимаете и принимаете, что:</p>
+      <ul>
+        <li>вся ответственность за использование информации — <b>на вас</b>;</li>
+        <li>создатель сайта <b>не несёт ответственности</b> за любые последствия, связанные с использованием расписания;</li>
+        <li>сайт предоставляется <b>«как есть»</b>, без каких-либо гарантий точности и доступности;</li>
+        <li>для сверки с официальным расписанием обращайтесь в деканат или на <a href="https://bntu.by" target="_blank" rel="noopener">bntu.by</a>.</li>
+      </ul>
+      <p class="consent-mini">Используя сайт, вы также соглашаетесь с хранением cookie/localStorage для работы приложения (запоминание группы и темы).</p>
+    </div>
+    <div class="consent-buttons">
+      <button class="consent-decline" id="consentDecline">Не принимаю</button>
+      <button class="consent-accept" id="consentAccept">Принимаю, продолжить</button>
+    </div>
+  </div>
+</div>
 
 <div class="bg" aria-hidden="true">
   <div class="blob b1"></div>
@@ -906,6 +975,23 @@ function toast(msg){
   }
   allGroups=DATA?listAllGroups():[];
   $("#metaGroups").textContent=allGroups.length;
+
+  // Consent / disclaimer — показываем если не принято
+  const consentBg=$("#consentBg");
+  if(localStorage.getItem("ftug_consent")==="1"){
+    consentBg.classList.add("hidden");
+  }else{
+    $("#consentAccept").onclick=()=>{
+      localStorage.setItem("ftug_consent","1");
+      consentBg.classList.add("hidden");
+    };
+    $("#consentDecline").onclick=()=>{
+      const msg=document.createElement("div");
+      msg.style.cssText="position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:30px;text-align:center;font-size:16px;line-height:1.6;color:var(--fg)";
+      msg.innerHTML="<div><div style='font-size:48px;margin-bottom:16px'>🚫</div>Без согласия с условиями использования сайт недоступен.<br><br><span style='font-size:13px;color:var(--fg-mute)'>Чтобы продолжить, перезагрузите страницу и примите условия.</span></div>";
+      document.body.appendChild(msg);
+    };
+  }
 
   // Пауза анимации блобов на время скролла — убирает jank фона при прокрутке
   const blobs=document.querySelectorAll(".blob");
